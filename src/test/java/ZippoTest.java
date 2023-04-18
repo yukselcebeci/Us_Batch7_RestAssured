@@ -106,6 +106,21 @@ public class ZippoTest {
                 .body("places.'place name'",hasSize(71)); // checks if the size of the list of place names is 71
     }
 
+    @Test
+    public void multipleTests(){
+
+        given()
+
+                .when()
+                .get("http://api.zippopotam.us/tr/01000")
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("places",hasSize(71))
+                .body("places.'place name'",hasItem("Büyükdikili Köyü"))
+                .body("places[2].'place name'",equalTo("Dörtağaç Köyü"));
+    }
+
 
 
 
