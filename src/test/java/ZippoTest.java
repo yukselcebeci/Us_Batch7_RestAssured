@@ -1,5 +1,14 @@
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import java.util.List;
 
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
@@ -183,4 +192,132 @@ public class ZippoTest {
                     .body("meta.pagination.page",equalTo(i));
         }
     }
+
+
+
+    RequestSpecification requestSpec;
+    ResponseSpecification responseSpec;
+    @BeforeClass
+    public void setup(){
+
+        baseURI = "https://gorest.co.in/public/v1"; // if the request url in the request method doesn't have http part
+                                                    // rest assured adds baseURI in front of it
+
+        requestSpec = new RequestSpecBuilder()
+                .log(LogDetail.URI)                     // prints request body
+                .setContentType(ContentType.JSON)       // sets the data format as JSON
+                .build();
+
+        responseSpec = new ResponseSpecBuilder()
+                .expectStatusCode(200)  // checks if the status code is 200 from all responses
+                .expectContentType(ContentType.JSON)    // checks if the response type is in JSON format
+                .log(LogDetail.BODY)                    // prints the body of all responses
+                .build();
+
+
+    }
+
+    @Test
+    public void baseURITest(){
+
+        given()
+                .param("page",2)
+
+                .when()
+                .get("/users")  //
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("meta.pagination.page",equalTo(2));
+
+    }
+
+    @Test
+    public void requestResponseSpecsTest(){
+
+        given()
+                .param("page",2)
+                .spec(requestSpec)
+                .when()
+                .get("/users")  //
+                .then()
+
+                .body("meta.pagination.page",equalTo(2))
+                .spec(responseSpec);
+    }
+
+    // JSON data extract
+
+    @Test
+    public void extractData(){
+
+        String placeName = given()
+                .pathParam("Country","us" )
+                .pathParam("ZipCode","90210")
+                .log().uri() // prints the request url
+                .when()
+                .get("http://api.zippopotam.us/{Country}/{ZipCode}")
+                .then()
+                //.log().body()
+                .statusCode(200)
+                .extract().path("places[0].'place name'"); // with extract method all request now returns a value.
+                                                             // We can assign it to a variable like String, int, Array ...
+
+        System.out.println(placeName);
+    }
+
+    @Test
+    public void extractData1(){
+        int limit = given()
+                .param("page",2)
+
+                .when()
+                .get("/users")  //
+                .then()
+                .log().body()
+                .statusCode(200)
+                .extract().path("meta.pagination.limit");
+
+        System.out.println("limit "+limit);
+        Assert.assertEquals(limit,10,"Test is failed");
+    }
+
+    @Test
+    public void extractData2(){
+        // get all ids from the response and verify that 1060492 is among them separately from the request
+
+        List<Integer> listOfIds = given()
+                .param("page",2)
+
+                .when()
+                .get("/users")  //
+                .then()
+                .log().body()
+                .statusCode(200)
+                .extract().path("data.id");
+
+        System.out.println(listOfIds.get(1));
+        Assert.assertTrue(listOfIds.contains(1060492));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
