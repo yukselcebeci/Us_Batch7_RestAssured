@@ -121,20 +121,66 @@ public class ZippoTest {
                 .body("places[2].'place name'",equalTo("Dörtağaç Köyü"));
     }
 
+    @Test
+    public void pathParamTest(){
 
+        given()
+                .pathParam("Country","us" )
+                .pathParam("ZipCode","90210")
+                .log().uri() // prints the request url
+                .when()
+                .get("http://api.zippopotam.us/{Country}/{ZipCode}")
+                .then()
+                .log().body()
+                .statusCode(200);
+    }
 
+    @Test
+    public void pathParamTest1(){
+        // send get request for zipcodes between 90210 and 90213 and verify that in all responses the size
+        // of the places array is 1
 
+        for (int i = 90210; i <=90213 ; i++) {
 
+            given()
+                    .pathParam("Country","us" )
+                    .pathParam("ZipCode",i)
+                    .log().uri() // prints the request url
+                    .when()
+                    .get("http://api.zippopotam.us/{Country}/{ZipCode}")
+                    .then()
+                    .log().body()
+                    .statusCode(200)
+                    .body("places",hasSize(1));
+        }
+    }
 
+    @Test
+    public void queryParamTest(){
 
+        given()
+                .param("page",2) // https://gorest.co.in/public/v1/users?page=2
+                .when()
+                .get("https://gorest.co.in/public/v1/users")
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("meta.pagination.page",equalTo(2));
+    }
 
-
-
-
-
-
-
-
-
-
+    @Test
+    public void queryParamTest1(){
+        // send the same request for the pages between 1-10 and check if
+        // the page number we send from request and page number we get from response are the same
+        for (int i = 1; i <= 10 ; i++) {
+            given()
+                    .param("page",i) // https://gorest.co.in/public/v1/users?page=2
+                    .when()
+                    .get("https://gorest.co.in/public/v1/users")
+                    .then()
+                    .log().body()
+                    .statusCode(200)
+                    .body("meta.pagination.page",equalTo(i));
+        }
+    }
 }
