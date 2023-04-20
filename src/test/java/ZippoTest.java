@@ -1,12 +1,11 @@
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.builder.ResponseSpecBuilder;
+import POJO.Location;
+import io.restassured.builder.*;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
-import io.restassured.specification.ResponseSpecification;
+import io.restassured.response.Response;
+import io.restassured.specification.*;
 import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 
 import java.util.List;
 
@@ -258,7 +257,7 @@ public class ZippoTest {
                 .when()
                 .get("http://api.zippopotam.us/{Country}/{ZipCode}")
                 .then()
-                //.log().body()
+                .log().body()
                 .statusCode(200)
                 .extract().path("places[0].'place name'"); // with extract method all request now returns a value.
                                                              // We can assign it to a variable like String, int, Array ...
@@ -299,6 +298,78 @@ public class ZippoTest {
         System.out.println(listOfIds.get(1));
         Assert.assertTrue(listOfIds.contains(1060492));
     }
+
+    @Test
+    public void extractData3(){
+
+        // send get request to https://gorest.co.in/public/v1/users.
+        // extract all names from data to a list
+
+    List<String> namesList = given()
+                .when()
+                .get("/users")
+                .then()
+                .log().body()
+                .statusCode(200)
+                .extract().path("data.name");
+
+        System.out.println(namesList.get(5));
+
+        Assert.assertEquals(namesList.get(5),"Ranjit Devar");
+
+    }
+
+    @Test
+    public void extractData4(){
+
+      Response response = given()
+                .when()
+                .get("/users")
+                .then()
+                .log().body()
+                .statusCode(200)
+                .extract().response();
+
+      List<Integer> listOfIds = response.path("data.id");
+      List<String> listOfNames = response.path("data.name");
+      int limit = response.path("meta.pagination.limit");
+      String currentLink = response.path("meta.pagination.links.current");
+
+        System.out.println("listOfIds = " + listOfIds);
+        System.out.println("listOfNames = " + listOfNames);
+        System.out.println("limit = " + limit);
+        System.out.println("currentLink = " + currentLink);
+
+        Assert.assertTrue(listOfNames.contains("Rev. Bhadraksh Gill"));
+        Assert.assertTrue(listOfIds.contains(1078203));
+        Assert.assertEquals(limit, 10);
+
+    }
+
+    @Test
+    public void extractJsonPOJO(){
+        // Location                                     // PLace
+            // String post code;                            String place name;
+            // String country;                              String longitude;
+            // String country abbreviation;                 String state;
+            // List<Place> places;                          String state abbreviation;
+                                                            //String latitude;
+
+      Location location = given()
+
+                .when()
+                .get("http://api.zippopotam.us/us/90210")
+                .then()
+                .log().body()
+                .extract().as(Location.class);
+
+        System.out.println("location.getCountry() = " + location.getCountry());
+        System.out.println("location.getPostCode() = " + location.getPostCode());
+        System.out.println("location.getPlaces().get(0).getPlaceName() = " + location.getPlaces().get(0).getPlaceName());
+        System.out.println("location.getPlaces().get(0).getState() = " + location.getPlaces().get(0).getState());
+    }
+
+
 
 
 
