@@ -1,54 +1,107 @@
 import POJO.User;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.equalTo;
 
 public class GoRestUsersTest {
 
-    public String createRandomName(){
-       return RandomStringUtils.randomAlphabetic(8);
+    public String createRandomName() {
+        return RandomStringUtils.randomAlphabetic(8);
     }
 
-    public String createRandomEmail(){
-        return RandomStringUtils.randomAlphabetic(8).toLowerCase()+"@techno.com";
+    public String createRandomEmail() {
+        return RandomStringUtils.randomAlphabetic(8).toLowerCase() + "@techno.com";
     }
 
-    @Test
-    public void createAUser(){
+    RequestSpecification requestSpec;
+    ResponseSpecification responseSpec;
+
+    @BeforeClass
+    public void setup() {
+        baseURI = "https://gorest.co.in/public/v2/users";
+
+        requestSpec = new RequestSpecBuilder()
+                .setContentType(ContentType.JSON)
+                .addHeader("Authorization", "Bearer af5816f3305012a060718702a1fa3d1be109b27cc6fcb7aea466b369d761f834")
+                .build();
+
+        responseSpec = new ResponseSpecBuilder()
+                .expectContentType(ContentType.JSON)
+                .log(LogDetail.BODY)
+                .build();
+
+
+    }
+
+    @Test(enabled = false)
+    public void createAUser() {
 
         given()   // preparation (headers, parameters...)
-                .header("Authorization","Bearer af5816f3305012a060718702a1fa3d1be109b27cc6fcb7aea466b369d761f834")
-                .contentType(ContentType.JSON)
-                .body("{\"name\":\""+createRandomName()+"\",\"email\":\""+createRandomEmail()+"\",\"gender\": \"male\",\"status\": \"active\"}")
+                .spec(requestSpec)
+                .body("{\"name\":\"" + createRandomName() + "\",\"email\":\"" + createRandomEmail() + "\",\"gender\": \"male\",\"status\": \"active\"}")
                 .log().uri()
                 .log().body()
 
                 .when()
-                .post("https://gorest.co.in/public/v2/users")
+                .post("")
 
                 .then()
-                .log().body()
-                .statusCode(201)
-                .contentType(ContentType.JSON);
+                .spec(responseSpec)
+                .statusCode(201);
     }
 
-    @Test
-    public void createAUserWithMaps(){
+    @Test(enabled = false)
+    public void createAUserWithMaps() {
 
-        Map<String,String> user = new HashMap<>();
-        user.put("name",createRandomName());
-        user.put("email",createRandomEmail());
-        user.put("gender","female");
-        user.put("status","active");
+        Map<String, String> user = new HashMap<>();
+        user.put("name", createRandomName());
+        user.put("email", createRandomEmail());
+        user.put("gender", "female");
+        user.put("status", "active");
 
         given()   // preparation (headers, parameters...)
-                .header("Authorization","Bearer af5816f3305012a060718702a1fa3d1be109b27cc6fcb7aea466b369d761f834")
-                .contentType(ContentType.JSON)
+
+                .spec(requestSpec)
+                .body(user)
+                .log().uri()
+                .log().body()
+
+                .when()
+                .post("")
+
+                .then()
+                .spec(responseSpec)
+                .statusCode(201);
+
+    }
+
+    User user;
+    Response response;
+    @Test
+    public void createAUserWithObjects() {
+
+        user = new User();
+        user.setName(createRandomName());
+        user.setEmail(createRandomEmail());
+        user.setGender("female");
+        user.setStatus("active");
+
+        response = given()   // preparation (headers, parameters...)
+
+                .spec(requestSpec)
                 .body(user)
                 .log().uri()
                 .log().body()
@@ -57,32 +110,103 @@ public class GoRestUsersTest {
                 .post("https://gorest.co.in/public/v2/users")
 
                 .then()
-                .log().body()
+                .spec(responseSpec)
                 .statusCode(201)
-                .contentType(ContentType.JSON);
+                .extract().response();
     }
 
-    @Test
-    public void createAUserWithObjects(){
+    /** Write create user negative test**/
+
+    @Test(dependsOnMethods = "createAUserWithObjects",priority = 1)
+    public void createUserNegativeTest(){
 
         User user = new User();
         user.setName(createRandomName());
-        user.setEmail(createRandomEmail());
-        user.setGender("");
+        user.setEmail(response.path("email"));
+        user.setGender("female");
+        user.setStatus("active");
 
         given()   // preparation (headers, parameters...)
-                .header("Authorization","Bearer af5816f3305012a060718702a1fa3d1be109b27cc6fcb7aea466b369d761f834")
-                .contentType(ContentType.JSON)
+
+                .spec(requestSpec)
                 .body(user)
                 .log().uri()
                 .log().body()
 
                 .when()
-                .post("https://gorest.co.in/public/v2/users")
+                .post("")
 
                 .then()
-                .log().body()
-                .statusCode(201)
-                .contentType(ContentType.JSON);
+                .spec(responseSpec)
+                .statusCode(422)
+                .body("[0].message",equalTo("has already been taken"));
+    }
+
+    /**get the user you created in createAUserWithObjects test**/
+
+    @Test(dependsOnMethods = "createAUserWithObjects", priority = 2)
+    public void getUserById(){
+
+        given()
+                .spec(requestSpec)
+                .pathParam("userId",response.path("id")) // we get the parameter id from the response of createAUserWithObjects
+                .when()
+                .get("/{userId}")
+
+                .then()
+                .spec(responseSpec)
+                .statusCode(200)
+                .body("email",equalTo(response.path("email")))
+                .body("id",equalTo(response.path("id")))
+                .body("name",equalTo(response.path("name")));
+    }
+
+    /** Update the user you created in createAUserWithObjects **/
+
+    @Test(dependsOnMethods = "createAUserWithObjects", priority = 3)
+    public void updateUser(){
+
+        user.setName("Michael Jordan");
+
+        given()
+                .spec(requestSpec)
+                .body(user)
+                .pathParam("userId",response.path("id"))
+                .when()
+                .put("/{userId}")
+
+                .then()
+                .spec(responseSpec)
+                .statusCode(200);
+    }
+
+    /** Delete the user we created in createAUserWithObjects **/
+
+    @Test(dependsOnMethods = "createAUserWithObjects", priority = 4)
+    public void deleteUser(){
+        given()
+                .spec(requestSpec)
+                .pathParam("userId",response.path("id"))
+
+                .when()
+                .delete("/{userId}")
+
+                .then()
+                .statusCode(204);
+    }
+
+    /** create delete user negative test **/
+
+    @Test(dependsOnMethods = {"createAUserWithObjects","deleteUser"}, priority = 5)
+    public void deleteUserNegativeTest(){
+        given()
+                .spec(requestSpec)
+                .pathParam("userId",response.path("id"))
+
+                .when()
+                .delete("/{userId}")
+
+                .then()
+                .statusCode(404);
     }
 }
