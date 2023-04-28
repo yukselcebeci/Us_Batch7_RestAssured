@@ -10,7 +10,9 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.*;
@@ -90,6 +92,7 @@ public class GoRestUsersTest {
 
     User user;
     Response response;
+
     @Test
     public void createAUserWithObjects() {
 
@@ -115,10 +118,12 @@ public class GoRestUsersTest {
                 .extract().response();
     }
 
-    /** Write create user negative test**/
+    /**
+     * Write create user negative test
+     **/
 
-    @Test(dependsOnMethods = "createAUserWithObjects",priority = 1)
-    public void createUserNegativeTest(){
+    @Test(dependsOnMethods = "createAUserWithObjects", priority = 1)
+    public void createUserNegativeTest() {
 
         User user = new User();
         user.setName(createRandomName());
@@ -139,39 +144,43 @@ public class GoRestUsersTest {
                 .then()
                 .spec(responseSpec)
                 .statusCode(422)
-                .body("[0].message",equalTo("has already been taken"));
+                .body("[0].message", equalTo("has already been taken"));
     }
 
-    /**get the user you created in createAUserWithObjects test**/
+    /**
+     * get the user you created in createAUserWithObjects test
+     **/
 
     @Test(dependsOnMethods = "createAUserWithObjects", priority = 2)
-    public void getUserById(){
+    public void getUserById() {
 
         given()
                 .spec(requestSpec)
-                .pathParam("userId",response.path("id")) // we get the parameter id from the response of createAUserWithObjects
+                .pathParam("userId", response.path("id")) // we get the parameter id from the response of createAUserWithObjects
                 .when()
                 .get("/{userId}")
 
                 .then()
                 .spec(responseSpec)
                 .statusCode(200)
-                .body("email",equalTo(response.path("email")))
-                .body("id",equalTo(response.path("id")))
-                .body("name",equalTo(response.path("name")));
+                .body("email", equalTo(response.path("email")))
+                .body("id", equalTo(response.path("id")))
+                .body("name", equalTo(response.path("name")));
     }
 
-    /** Update the user you created in createAUserWithObjects **/
+    /**
+     * Update the user you created in createAUserWithObjects
+     **/
 
     @Test(dependsOnMethods = "createAUserWithObjects", priority = 3)
-    public void updateUser(){
+    public void updateUser() {
 
         user.setName("Michael Jordan");
 
         given()
                 .spec(requestSpec)
                 .body(user)
-                .pathParam("userId",response.path("id"))
+                .pathParam("userId", response.path("id"))
                 .when()
                 .put("/{userId}")
 
@@ -180,13 +189,15 @@ public class GoRestUsersTest {
                 .statusCode(200);
     }
 
-    /** Delete the user we created in createAUserWithObjects **/
+    /**
+     * Delete the user we created in createAUserWithObjects
+     **/
 
     @Test(dependsOnMethods = "createAUserWithObjects", priority = 4)
-    public void deleteUser(){
+    public void deleteUser() {
         given()
                 .spec(requestSpec)
-                .pathParam("userId",response.path("id"))
+                .pathParam("userId", response.path("id"))
 
                 .when()
                 .delete("/{userId}")
@@ -195,13 +206,15 @@ public class GoRestUsersTest {
                 .statusCode(204);
     }
 
-    /** create delete user negative test **/
+    /**
+     * create delete user negative test
+     **/
 
-    @Test(dependsOnMethods = {"createAUserWithObjects","deleteUser"}, priority = 5)
-    public void deleteUserNegativeTest(){
+    @Test(dependsOnMethods = {"createAUserWithObjects", "deleteUser"}, priority = 5)
+    public void deleteUserNegativeTest() {
         given()
                 .spec(requestSpec)
-                .pathParam("userId",response.path("id"))
+                .pathParam("userId", response.path("id"))
 
                 .when()
                 .delete("/{userId}")
@@ -209,4 +222,30 @@ public class GoRestUsersTest {
                 .then()
                 .statusCode(404);
     }
+
+    @Test
+    public void getUsers() {
+
+        Response response = given()
+                .spec(requestSpec)
+                .when()
+                .get()
+
+                .then()
+                .spec(responseSpec)
+                .statusCode(200)
+                .extract().response();
+
+        int userId0 = response.jsonPath().getInt("[0].id");
+        int userId3 = response.jsonPath().getInt("[2].id");
+        List<User> usersList = response.jsonPath().getList("", User.class);
+
+        System.out.println("userId0 = " + userId0);
+        System.out.println("userId3 = " + userId3);
+        System.out.println("usersList = " + usersList);
+
+
+    }
+
+
 }
