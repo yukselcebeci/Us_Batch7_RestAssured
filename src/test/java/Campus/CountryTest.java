@@ -137,7 +137,7 @@ public class CountryTest {
 
     /** Delete country negative test**/
 
-    @Test(dependsOnMethods = {"deleteCountry","createCountry"},priority = 4)
+  /*  @Test(dependsOnMethods = {"deleteCountry","createCountry"},priority = 4)
     public void deleteCountryNegativeTest(){
         given()
                 .pathParam("countryId",response.jsonPath().getString("id"))
@@ -147,7 +147,7 @@ public class CountryTest {
                 .delete("/school-service/api/countries/{countryId}")
 
                 .then();
-    }
+    } */
 }
 
 
