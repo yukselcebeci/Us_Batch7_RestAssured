@@ -82,7 +82,7 @@ public class CountryTest {
      * Write create country negative test
      **/
 
-    @Test(dependsOnMethods = "createCountry")
+    @Test(dependsOnMethods = "createCountry",priority = 1)
     public void createCountryNegativeTest() {
 
         given()
@@ -101,7 +101,7 @@ public class CountryTest {
      * Update the country we created
      **/
 
-    @Test(dependsOnMethods = "createCountry")
+    @Test(dependsOnMethods = "createCountry",priority = 2)
     public void updateCountry() {
 
         country.setId(response.jsonPath().getString("id"));
@@ -121,7 +121,7 @@ public class CountryTest {
 
     /** Delete the country we created**/
 
-    @Test(dependsOnMethods = "createCountry")
+    @Test(dependsOnMethods = "createCountry",priority = 3)
     public void deleteCountry(){
 
         given()
@@ -137,7 +137,7 @@ public class CountryTest {
 
     /** Delete country negative test**/
 
-    @Test(dependsOnMethods = {"deleteCountry","createCountry"})
+    @Test(dependsOnMethods = {"deleteCountry","createCountry"},priority = 4)
     public void deleteCountryNegativeTest(){
         given()
                 .pathParam("countryId",response.jsonPath().getString("id"))
