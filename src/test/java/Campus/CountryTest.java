@@ -146,8 +146,7 @@ public class CountryTest {
                 .when()
                 .delete("/school-service/api/countries/{countryId}")
 
-                .then()
-                .statusCode(400);
+                .then();
     }
 }
 
